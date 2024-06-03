@@ -16,6 +16,8 @@ def build_tokenizer(args):
     if args.rank == 0:
         print('> building {} tokenizer ...'.format(args.tokenizer_type),
               flush=True)
+        
+    
 
     # Select and instantiate the tokenizer.
     if args.tokenizer_type == 'BertWordPieceLowerCase':
@@ -44,6 +46,10 @@ def build_tokenizer(args):
     elif args.tokenizer_type == 'NullTokenizer':
         assert args.vocab_size is not None
         tokenizer = _NullTokenizer(args.vocab_size)
+    elif args.tokenizer_type == 'Petagraph':
+        assert args.vocab_size is not None
+        tokenizer = "DNA"
+        args.padded_vocab_size = args.vocab_size
     else:
         raise NotImplementedError('{} tokenizer is not '
                                   'implemented.'.format(args.tokenizer_type))
