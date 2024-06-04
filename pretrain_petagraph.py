@@ -115,7 +115,12 @@ def get_batch(data_iterator):
     # slice batch along sequence dimension for context parallelism
     batch = get_batch_on_this_cp_rank(batch)
 
-    return batch.values()
+    batch_data = batch.values()
+
+    # print_rank_0(f"Batch data: {list(batch_data)[0].shape}")
+    # print_rank_0(f"Batch data: {list(batch_data)[0][0, 0:20]}")
+
+    return batch_data
 
 
 def loss_func(loss_mask: torch.Tensor, output_tensor: torch.Tensor):
@@ -230,6 +235,7 @@ def train_valid_test_datasets_provider(train_val_test_num_samples):
     print_rank_0(config)
 
     print_rank_0("> building train, validation, and test datasets for GPT ...")
+    print_rank_0(f"> Provided train, val, test samples: {train_val_test_num_samples}")
 
     # print("Data path: ", args.data_path)
     data_path = Path(args.data_path[0])
@@ -261,7 +267,8 @@ def train_valid_test_datasets_provider(train_val_test_num_samples):
         # Load data from text file
         all_files = []
         for line in tqdm(data_path.open()):
-            url = url_format.format(accession=line)
+            accession = line.strip().strip("\n")
+            url = url_format.format(accession=accession)
             all_files.append(url)
             
         print_rank_0(f"Loaded {len(all_files)} {load_type} files from {data_path}")
@@ -275,34 +282,62 @@ def train_valid_test_datasets_provider(train_val_test_num_samples):
 
     print_rank_0(f"Data path: {data_path}")
     print_rank_0(f"Mock data: {mock_data}")
+    print_rank_0(f"Micro batch size: {args.micro_batch_size}")
+    print_rank_0(f"Num workers: {args.num_workers}")
 
+    prefetch_buffer_size = 8192 * 8
     train_ds = PetaGraphStreamDataset(
         url_list=train_list,
         from_cloud=not mock_data,
         maxlen=seq_length,
-        samples_per_epoch=10000,
+        samples_per_epoch=len(train_list) * 50, # random guess number ~seq. per file
         create_attention_mask=True,
-        debug=True,
+        prefetch_sequences=prefetch_buffer_size,
     )
-
+    
     val_ds = PetaGraphStreamDataset(
         url_list=val_list,
         from_cloud=not mock_data,
         maxlen=seq_length,
-        samples_per_epoch=10000,
+        samples_per_epoch=100_000,
         create_attention_mask=True,
+        prefetch_sequences=prefetch_buffer_size,
     )
 
     test_ds = PetaGraphStreamDataset(
         url_list=test_list,
         from_cloud=not mock_data,
         maxlen=seq_length,
-        samples_per_epoch=10000,
+        samples_per_epoch=100_000,
         create_attention_mask=True,
+        prefetch_sequences=prefetch_buffer_size,
     )
 
     print_rank_0("> finished creating GPT datasets ...")
 
+    if args.dataloader_type == "external":
+        print_rank_0("Using custom dataloader")
+        train_dl = iter(torch.utils.data.DataLoader(train_ds,
+                batch_size=args.micro_batch_size,
+                num_workers=args.num_workers,
+                pin_memory=True,
+                persistent_workers=True if args.num_workers > 0 else False,
+            ))
+        val_dl = iter(torch.utils.data.DataLoader(val_ds,
+            batch_size=args.micro_batch_size,
+            num_workers=args.num_workers,
+            pin_memory=True,
+            persistent_workers=True if args.num_workers > 0 else False,
+        ))
+        test_dl = iter(torch.utils.data.DataLoader(test_ds,
+            batch_size=args.micro_batch_size,
+            num_workers=args.num_workers,
+            pin_memory=True,
+            persistent_workers=True if args.num_workers > 0 else False,
+        ))
+        return train_dl, val_dl, test_dl
+    
+    print_rank_0("Using internal dataloader")
     return train_ds, val_ds, test_ds
 
 
