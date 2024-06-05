@@ -107,7 +107,7 @@ class PetaGraphStreamDataset(torch.utils.data.Dataset):
 
         print_rank_0(f"Pipeline warmup:")
         warmup_sample_size = 1024
-        for _ in tqdm(range(warmup_sample_size)):
+        for _ in range(warmup_sample_size):
             _ = next(self.iterable_dataset)
 
         print_rank_0("=====================================")

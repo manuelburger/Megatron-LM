@@ -1342,10 +1342,15 @@ def evaluate_and_print_results(prefix, forward_step_func,
                                   iteration)
                 writer.add_scalar('{} validation ppl vs samples'.format(key),
                                   ppl, args.consumed_train_samples)
+                
             if wandb_writer and is_last_rank():
                 wandb_writer.log({
                     '{} validation'.format(key): total_loss_dict[key].item()},
                     iteration)
+                if args.log_validation_ppl_to_tensorboard:
+                    wandb_writer.log({
+                        '{} validation ppl'.format(key): ppl},
+                        iteration)
 
     if process_non_loss_data_func is not None and writer and is_last_rank():
         process_non_loss_data_func(collected_non_loss_data, iteration, writer)

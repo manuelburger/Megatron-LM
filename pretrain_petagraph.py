@@ -299,7 +299,7 @@ def train_valid_test_datasets_provider(train_val_test_num_samples):
         url_list=val_list,
         from_cloud=not mock_data,
         maxlen=seq_length,
-        samples_per_epoch=100_000,
+        samples_per_epoch=len(val_list) * 50,
         create_attention_mask=True,
         prefetch_sequences=prefetch_buffer_size,
     )
@@ -308,7 +308,7 @@ def train_valid_test_datasets_provider(train_val_test_num_samples):
         url_list=test_list,
         from_cloud=not mock_data,
         maxlen=seq_length,
-        samples_per_epoch=100_000,
+        samples_per_epoch=len(test_list) * 50,
         create_attention_mask=True,
         prefetch_sequences=prefetch_buffer_size,
     )

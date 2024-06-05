@@ -5,6 +5,7 @@
 export CUDA_DEVICE_MAX_CONNECTIONS=1
 
 CHECKPOINT_PATH=/users/burgerm/iopsstor/petagraph/logs
+TENSORBOARD=/users/burgerm/iopsstor/petagraph/logs/tensorboard
 # VOCAB_FILE=<Specify path to file>/gpt2-vocab.json
 # MERGE_FILE=<Specify path to file>/gpt2-merges.txt
 
@@ -17,8 +18,8 @@ GPT_ARGS="
     --num-attention-heads 4 \
     --seq-length 2048 \
     --max-position-embeddings 2048 \
-    --micro-batch-size 128 \
-    --global-batch-size 128 \
+    --micro-batch-size 16 \
+    --global-batch-size 16 \
     --lr 0.00015 \
     --train-iters 500000 \
     --lr-decay-iters 320000 \
@@ -42,6 +43,9 @@ DATA_ARGS="
 "
 
 OUTPUT_ARGS="
+    --log-validation-ppl-to-tensorboard \
+    --log-throughput \
+    --tensorboard-dir $TENSORBOARD \
     --wandb-project petagraph \
     --wandb-exp-name test \
     --log-progress \
