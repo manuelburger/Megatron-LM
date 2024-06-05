@@ -76,6 +76,7 @@ class MegatronPretrainingSampler:
             'data_parallel_rank should be smaller than data size: {}, ' \
             '{}'.format(self.data_parallel_rank, data_parallel_size)
         
+        print(f"[{self.__class__.__name__}] data_parallel_rank: {self.data_parallel_rank}, data_parallel_size: {data_parallel_size}")
         # print(f"[{self.__class__.__name__}] total_samples: {self.total_samples}, consumed_samples: {self.consumed_samples}, micro_batch_size: {self.micro_batch_size}, data_parallel_rank: {self.data_parallel_rank}, data_parallel_size: {data_parallel_size}, drop_last: {self.drop_last}")
         # print(f"[{self.__class__.__name__}] micro_batch_times_data_parallel_size: {self.micro_batch_times_data_parallel_size}")
 
